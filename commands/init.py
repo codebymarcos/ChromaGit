@@ -1,5 +1,11 @@
 import os
+import sys
 import shutil
+
+# importar cores
+__path__ = os.path.abspath(os.path.dirname(__file__) + '/..')
+sys.path.append(__path__)
+from cli.collor import red_bold, green_bold, yellow
 
 class Init:
     def __init__(self, path):
@@ -70,7 +76,7 @@ class Init:
         current_folder = os.path.basename(self.path)
         invisible_folder = os.path.join(self.path, f".hub_{current_folder}")
         if not os.path.exists(invisible_folder):
-            raise FileNotFoundError("A pasta invisivel nao existe.")
+            raise FileNotFoundError("[ERRO] Pasta de controle não encontrada")
 
         # Obtém os padrões do .gitignore
         gitignore_patterns = self.read_gitignore()
@@ -90,10 +96,10 @@ class Init:
             # Verifica os padrões padrão
             for pattern in default_ignore_patterns:
                 if pattern.startswith("*."):
-                    if name.endswith(pattern[2:]):  # Removemos o *. do padrão
+                    if name.endswith(pattern[2:]):
                         return True
                 elif pattern.startswith("*"):
-                    if name.endswith(pattern[1:]):  # Remove só o *
+                    if name.endswith(pattern[1:]):
                         return True
                 elif name == pattern or name.startswith(pattern + os.sep):
                     return True
@@ -102,13 +108,14 @@ class Init:
             for pattern in gitignore_patterns:
                 if pattern and not pattern.startswith('#'):
                     if self.matches_gitignore_pattern(full_path, pattern):
-                        print(f"Ignorando {name} devido ao padrão {pattern}")  # Debug
                         return True
             
             return False
         
+        files_processed = {"added": [], "skipped": []}
         for item in os.listdir(self.path):
             if should_ignore(item):
+                files_processed["skipped"].append(item)
                 continue
             
             s = os.path.join(self.path, item)
@@ -117,47 +124,55 @@ class Init:
             try:
                 if os.path.isdir(s):
                     shutil.copytree(s, d, dirs_exist_ok=True)
+                    files_processed["added"].append(f"{item}/")
                 else:
                     shutil.copy2(s, d)
+                    files_processed["added"].append(item)
             except PermissionError:
-                print(f"Aviso: Sem permissão para copiar {item}, ignorando...")
+                print(yellow(f"[AVISO] Permissão negada: {item}"))
+
+# função para uso rapido
+def init(path=None):
+    """
+    Inicializa um repositório ChromaGit no diretório especificado ou no diretório atual.
+    
+    Args:
+        path (str, optional): Caminho para o diretório onde inicializar. 
+                            Se não fornecido, usa o diretório atual.
+    
+    Returns:
+        bool: True se a inicialização foi bem sucedida, False caso contrário.
+    """
+    try:
+        if path is None:
+            path = os.getcwd()
+        
+        init_cmd = Init(path)
+        print(yellow("\nchromagit >") + f" Inicializando repositório em: {path}")
+        
+        # Cria e verifica a pasta de controle
+        invisible_folder = init_cmd.create_invisible_folder()
+        if not init_cmd.check_invisible_folder():
+            print(red_bold("[ERRO] Falha ao criar pasta de controle"))
+            return False
+        
+        # Copia os arquivos respeitando o .gitignore
+        try:
+            init_cmd.copy_files_to_invisible_folder()
+            print(green_bold("[OK] Repositório inicializado com sucesso"))
+            return True
+            
+        except Exception as e:
+            print(red_bold(f"[ERRO] {str(e)}"))
+            return False
+        
+    except Exception as e:
+        print(red_bold(f"[ERRO] {str(e)}"))
+        return False
 
 # testar a classe
 if __name__ == "__main__":
-    def print_separator():
-        print("\n" + "="*50 + "\n")
-
-    print("Iniciando testes do comando init...")
-    print_separator()
-    
-    # Inicializa a classe com o diretório atual
-    init = Init(os.getcwd())
-    print("Diretório atual:", init.path)
-    
-    print_separator()
-    print("1. Testando criação da pasta invisível...")
-    invisible_folder = init.create_invisible_folder()
-    print("✓ Pasta invisível criada em:", invisible_folder)
-    
-    print_separator()
-    print("2. Verificando existência da pasta invisível...")
-    exists = init.check_invisible_folder()
-    print("✓ Status da pasta invisível:", "Existe" if exists else "Não existe")
-    
-    print_separator()
-    print("3. Lendo padrões do .gitignore...")
-    gitignore_patterns = init.read_gitignore()
-    print("✓ Padrões encontrados no .gitignore:")
-    for pattern in gitignore_patterns:
-        print(f"  - {pattern}")
-    
-    print_separator()
-    print("4. Copiando arquivos para a pasta invisível...")
-    try:
-        init.copy_files_to_invisible_folder()
-        print("✓ Arquivos copiados com sucesso!")
-    except Exception as e:
-        print("✗ Erro ao copiar arquivos:", str(e))
-    
-    print_separator()
-    print("Testes concluídos!")
+    if init():
+        sys.exit(0)
+    else:
+        sys.exit(1)
