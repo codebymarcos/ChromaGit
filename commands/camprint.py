@@ -37,8 +37,8 @@ class Camprint:
         return invisible_folder
 
     # Funções relacionadas ao push serão movidas para um novo arquivo push.py
-
-def save_commit_log(self, commit_message="Commit sem mensagem", files_copied=None):
+    
+    def save_commit_log(self, commit_message="Commit sem mensagem", files_copied=None):
         """
         Salva o log do commit na pasta invisível
         """
@@ -76,10 +76,56 @@ if __name__ == "__main__":
     print(yellow("\nchromagit >") + " Commitando alterações...")
     
     try:
-        # Atualiza os arquivos na pasta invisível
+        # Lista de padrões para ignorar
+        ignore_patterns = [
+            ".hub_*",         # Nossas pastas invisíveis e seus conteúdos
+            ".git",           # Pasta git
+            ".git/**",        # Todos os arquivos dentro de .git
+            "__pycache__",    # Cache Python
+            "*.pyc",          # Arquivos compilados Python
+            ".vscode",        # Configurações VS Code
+            "*.git",          # Qualquer arquivo .git
+        ]
+        
+        # Função auxiliar para verificar se deve ignorar
+        def should_ignore(name, full_path):
+            # Primeiro verifica se é a pasta invisível ou está dentro dela
+            invisible_folder = os.path.basename(camprint.invisible_folder)
+            if name.startswith(".hub_") or invisible_folder in full_path:
+                return True
+                
+            # Depois verifica os outros padrões
+            for pattern in ignore_patterns:
+                if pattern.startswith("*."):
+                    if name.endswith(pattern[2:]):
+                        return True
+                elif pattern.endswith("/**"):
+                    base = pattern[:-3]
+                    if name.startswith(base):
+                        return True
+                elif pattern.startswith("*"):
+                    if name.endswith(pattern[1:]):
+                        return True
+                elif name == pattern or name.startswith(pattern + os.sep):
+                    return True
+            return False
+            
+        # Primeiro limpa a pasta invisível
+        for item in os.listdir(camprint.invisible_folder):
+            item_path = os.path.join(camprint.invisible_folder, item)
+            try:
+                if os.path.isdir(item_path):
+                    shutil.rmtree(item_path)
+                else:
+                    os.remove(item_path)
+            except PermissionError:
+                print(yellow(f"[AVISO] Permissão negada ao limpar: {item}"))
+        
+        # Depois copia os novos arquivos
         files_copied = []
         for item in os.listdir(camprint.path):
-            if item.startswith('.hub_'):  # Pula a própria pasta invisível
+            item_path = os.path.join(camprint.path, item)
+            if should_ignore(item, item_path):
                 continue
                 
             s = os.path.join(camprint.path, item)
