@@ -27,49 +27,112 @@ class Init:
     
     # Ler padrões do arquivo .gitignore
     def read_gitignore(self):
+        """
+        Lê e processa os padrões do arquivo .gitignore.
+        Suporta:
+        - Comentários (#)
+        - Negação de padrões (!)
+        - Diretórios específicos (/)
+        - Wildcards (*, **, ?, [abc], [0-9])
+        """
         gitignore_path = os.path.join(self.path, '.gitignore')
         patterns = []
-        if os.path.exists(gitignore_path):
-            with open(gitignore_path, 'r') as f:
-                for line in f:
-                    line = line.strip()
-                    # Ignora linhas vazias e comentários
-                    if line and not line.startswith('#'):
-                        patterns.append(line)
+        if not os.path.exists(gitignore_path):
+            return patterns
+
+        with open(gitignore_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                
+                # Pula linhas vazias e comentários
+                if not line or line.startswith('#'):
+                    continue
+                
+                # Processa padrões de negação
+                is_negative = line.startswith('!')
+                if is_negative:
+                    line = line[1:].strip()
+                
+                # Remove barras duplicadas e barras do final
+                line = line.replace('//', '/')
+                line = line.rstrip('/')
+                
+                # Converte padrões para formato glob
+                if line.startswith('/'):
+                    line = line[1:]  # Remove barra inicial para padrões absolutos
+                elif not line.startswith('*'):
+                    line = f"**/{line}"  # Torna padrão relativo recursivo
+                
+                patterns.append({
+                    'pattern': line,
+                    'is_negative': is_negative,
+                    'is_dir': line.endswith('/'),
+                    'is_recursive': '**' in line
+                })
+                
         return patterns
 
-    # Verifica se um arquivo corresponde a um padrão do gitignore
-    def matches_gitignore_pattern(self, filepath, pattern):
-        import fnmatch
+    def matches_gitignore_pattern(self, filepath, pattern_info):
+        """
+        Verifica se um arquivo corresponde a um padrão do .gitignore
+        
+        Args:
+            filepath: Caminho do arquivo a verificar
+            pattern_info: Dicionário com informações do padrão:
+                - pattern: O padrão em si
+                - is_negative: Se é um padrão de negação
+                - is_dir: Se é específico para diretório
+                - is_recursive: Se usa matching recursivo (**)
+        """
+        import fnmatch, re
         from pathlib import Path
 
-        # Converte o caminho para um objeto Path para facilitar a manipulação
         path = Path(filepath)
-        relative_path = path.relative_to(Path(self.path))
+        try:
+            relative_path = path.relative_to(Path(self.path))
+        except ValueError:
+            return False
+
+        # Se o padrão é específico para diretório e o arquivo não é um diretório
+        if pattern_info['is_dir'] and not os.path.isdir(filepath):
+            return False
+
+        pattern = pattern_info['pattern']
+        path_str = str(relative_path).replace('\\', '/')
         
-        # Normaliza o padrão
-        pattern = pattern.rstrip('/')  # Remove trailing slash
-        
-        # Casos especiais de padrões
-        if pattern.startswith('*/'):
-            # Padrão que corresponde a qualquer diretório
-            pattern = pattern[2:]
-            return any(part for part in relative_path.parts if fnmatch.fnmatch(part, pattern))
+        # Trata padrões com /**/ para matching em qualquer nível
+        if '/**/' in pattern:
+            parts = pattern.split('/**/')
+            return self._matches_parts(path_str, parts)
+            
+        # Trata padrões com ** para matching recursivo
         elif pattern.startswith('**/'):
-            # Padrão que corresponde a qualquer profundidade
-            pattern = pattern[3:]
-            return any(fnmatch.fnmatch(str(relative_path), f"*{pattern}"))
-        elif pattern.startswith('/'):
-            # Padrão absoluto (relativo à raiz do projeto)
-            pattern = pattern[1:]
-            return fnmatch.fnmatch(str(relative_path), pattern)
-        else:
-            # Padrão simples
-            for part in relative_path.parts:
-                if fnmatch.fnmatch(part, pattern):
+            return fnmatch.fnmatch(path_str, pattern[3:]) or fnmatch.fnmatch(path_str, pattern)
+            
+        # Trata padrões absolutos (sem ** no início)
+        elif not pattern.startswith('*'):
+            return fnmatch.fnmatch(path_str, pattern)
+            
+        # Padrão normal
+        return fnmatch.fnmatch(path_str, pattern)
+    
+    def _matches_parts(self, path, pattern_parts):
+        """Auxiliar para verificar padrões com /**/ (matching em qualquer nível)"""
+        if not pattern_parts:
+            return True
+        
+        current = pattern_parts[0]
+        remaining = pattern_parts[1:]
+        
+        path_parts = path.split('/')
+        for i in range(len(path_parts)):
+            subpath = '/'.join(path_parts[i:])
+            if fnmatch.fnmatch(subpath, current):
+                if not remaining:
                     return True
-            # Tenta corresponder ao caminho completo relativo
-            return fnmatch.fnmatch(str(relative_path), pattern)
+                if self._matches_parts(subpath, remaining):
+                    return True
+        return False
 
     # copiar arquivos do workspace atual para a pasta invisivel
     def copy_files_to_invisible_folder(self):
@@ -104,11 +167,21 @@ class Init:
                 elif name == pattern or name.startswith(pattern + os.sep):
                     return True
             
-            # Verifica os padrões do .gitignore
+            # Primeiro verifica padrões negativos do .gitignore
+            matched_negative = False
             for pattern in gitignore_patterns:
-                if pattern and not pattern.startswith('#'):
-                    if self.matches_gitignore_pattern(full_path, pattern):
-                        return True
+                if pattern['is_negative'] and self.matches_gitignore_pattern(full_path, pattern):
+                    matched_negative = True
+                    break
+                    
+            # Se tiver match com padrão negativo, não ignora
+            if matched_negative:
+                return False
+                
+            # Depois verifica padrões normais do .gitignore
+            for pattern in gitignore_patterns:
+                if not pattern['is_negative'] and self.matches_gitignore_pattern(full_path, pattern):
+                    return True
             
             return False
         
