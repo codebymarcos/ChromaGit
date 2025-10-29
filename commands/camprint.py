@@ -12,6 +12,7 @@ __path__ = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(__path__)
 from cli.collor import *
 from utils.config import find_documents_folder, locate_university_folder
+from cli.progress import ProgressLogger
 
 class Camprint:
     def __init__(self):
@@ -110,7 +111,15 @@ if __name__ == "__main__":
                     return True
             return False
             
-        # Primeiro limpa a pasta invisível
+        # Primeiro define itens a copiar (aplica filtro)
+        items_to_copy = []
+        for item in os.listdir(camprint.path):
+            item_path = os.path.join(camprint.path, item)
+            if should_ignore(item, item_path):
+                continue
+            items_to_copy.append(item)
+
+        # Depois limpa a pasta invisível
         for item in os.listdir(camprint.invisible_folder):
             item_path = os.path.join(camprint.invisible_folder, item)
             try:
@@ -121,25 +130,23 @@ if __name__ == "__main__":
             except PermissionError:
                 print(yellow(f"[AVISO] Permissão negada ao limpar: {item}"))
         
-        # Depois copia os novos arquivos
+        # Depois copia os novos arquivos com barra de progresso
         files_copied = []
-        for item in os.listdir(camprint.path):
-            item_path = os.path.join(camprint.path, item)
-            if should_ignore(item, item_path):
-                continue
-                
-            s = os.path.join(camprint.path, item)
-            d = os.path.join(camprint.invisible_folder, item)
-            
-            try:
-                if os.path.isdir(s):
-                    shutil.copytree(s, d, dirs_exist_ok=True)
-                    files_copied.append(f"{item}/")
-                else:
-                    shutil.copy2(s, d)
-                    files_copied.append(item)
-            except PermissionError:
-                print(yellow(f"[AVISO] Permissão negada: {item}"))
+        with ProgressLogger("Copiando arquivos para área invisível...", total=len(items_to_copy)) as p:
+            for item in items_to_copy:
+                s = os.path.join(camprint.path, item)
+                d = os.path.join(camprint.invisible_folder, item)
+                try:
+                    if os.path.isdir(s):
+                        shutil.copytree(s, d, dirs_exist_ok=True)
+                        files_copied.append(f"{item}/")
+                    else:
+                        shutil.copy2(s, d)
+                        files_copied.append(item)
+                except PermissionError:
+                    print(yellow(f"[AVISO] Permissão negada: {item}"))
+                finally:
+                    p.update(1, custom_message=item)
                 
         # Salva o log do commit
         camprint.save_commit_log(args.message, files_copied)

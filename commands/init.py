@@ -7,6 +7,7 @@ __path__ = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(__path__)
 from cli.collor import red_bold, green_bold, yellow
 from utils.ignore import process_gitignore_folder
+from cli.progress import SimpleProgress
 
 class Init:
     def __init__(self, path):
@@ -60,7 +61,7 @@ def init(path=None):
             path = os.getcwd()
         
         init_cmd = Init(path)
-        print(yellow("\nchromagit >") + f" Inicializando repositório em: {path}")
+        progress = SimpleProgress(f"Inicializando repositório em: {path}")
         
         # Cria e verifica a pasta de controle
         invisible_folder = init_cmd.create_invisible_folder()
@@ -70,8 +71,9 @@ def init(path=None):
         
         # Copia os arquivos respeitando o .gitignore
         try:
+            progress.step("Copiando arquivos (respeitando .gitignore)...")
             init_cmd.copy_files_to_invisible_folder()
-            print(green_bold("[OK] Repositório inicializado com sucesso"))
+            progress.done("Repositório inicializado com sucesso")
             return True
             
         except Exception as e:

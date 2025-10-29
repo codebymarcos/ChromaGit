@@ -9,6 +9,7 @@ __path__ = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(__path__)
 from cli.collor import red_bold, green_bold, yellow
 from utils.config import locate_university_folder, find_documents_folder
+from cli.progress import ProgressLogger
 
 class Save:
     def __init__(self):
@@ -67,14 +68,18 @@ class Save:
             else:
                 os.makedirs(destination, exist_ok=True)
             
-            # copia o conteúdo da pasta invisível para o destino
-            for item in os.listdir(invisible_folder):
-                src_path = os.path.join(invisible_folder, item)
-                dst_path = os.path.join(destination, item)
-                if os.path.isdir(src_path):
-                    shutil.copytree(src_path, dst_path, dirs_exist_ok=True)
-                else:
-                    shutil.copy2(src_path, dst_path)
+            # lista itens a copiar
+            items = os.listdir(invisible_folder)
+            # copia o conteúdo da pasta invisível para o destino com barra de progresso
+            with ProgressLogger("Salvando no ChromaGithub...", total=len(items)) as p:
+                for item in items:
+                    src_path = os.path.join(invisible_folder, item)
+                    dst_path = os.path.join(destination, item)
+                    if os.path.isdir(src_path):
+                        shutil.copytree(src_path, dst_path, dirs_exist_ok=True)
+                    else:
+                        shutil.copy2(src_path, dst_path)
+                    p.update(1, custom_message=item)
             
             print(green_bold("[OK] Alterações salvas em ChromaGithub"))
             print(yellow("Destino: ") + destination)
