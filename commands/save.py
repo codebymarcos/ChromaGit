@@ -57,6 +57,9 @@ class Save:
             # prepara destino (limpa se existir, cria se não)
             if os.path.exists(destination):
                 for item in os.listdir(destination):
+                    # não tocar na pasta .git do destino
+                    if item == ".git":
+                        continue
                     target_path = os.path.join(destination, item)
                     try:
                         if os.path.isdir(target_path):
@@ -69,7 +72,7 @@ class Save:
                 os.makedirs(destination, exist_ok=True)
             
             # lista itens a copiar
-            items = os.listdir(invisible_folder)
+            items = [i for i in os.listdir(invisible_folder) if i != ".git"]
             # copia o conteúdo da pasta invisível para o destino com barra de progresso
             with ProgressLogger("Salvando no ChromaGithub...", total=len(items)) as p:
                 for item in items:
