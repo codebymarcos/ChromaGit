@@ -6,7 +6,7 @@ __path__ = os.path.abspath(os.path.dirname(__file__))
 if __path__ not in sys.path:
     sys.path.append(__path__)
 from cli.collor import yellow, green_bold, red_bold
-from commands import init as init_cmd, Camprint, Save
+from commands import init as init_cmd, Camprint, Save, New, Hub, Duple
 
 # util: formatar prompt com nome da pasta atual
 def prompt():
@@ -39,6 +39,9 @@ def cmd_help():
     print("  cd <pasta>     - mudar de diretório")
     print("  pwd            - mostrar diretório atual")
     print("  init [path]    - inicializar repositório ChromaGit")
+    print("  new            - criar novo repositório em Documents/ChromaGithub")
+    print("  hub            - explorar repositórios em Documents/ChromaGithub")
+    print("  duple <repo>   - copiar repositório do ChromaGithub para workspace")
     print("  commit [-m msg]- copiar para área invisível e registrar log")
     print("  save           - salvar em Documents/ChromaGithub/<repo>")
     print("  help           - listar comandos")
@@ -136,6 +139,22 @@ def cmd_save():
     s = Save()
     s.save()
 
+# comando: new (usa New)
+def cmd_new():
+    n = New()
+    n.create()
+
+# comando: hub (usa Hub)
+def cmd_hub():
+    h = Hub()
+    h.run()
+
+# comando: duple (usa Duple)
+def cmd_duple(args):
+    repo_name = ' '.join(args) if args else None
+    d = Duple(repo_name)
+    d.run()
+
 def main():
     # loop principal
     while True:
@@ -165,6 +184,12 @@ def main():
             cmd_commit(args)
         elif cmd == "save":
             cmd_save()
+        elif cmd == "new":
+            cmd_new()
+        elif cmd == "hub":
+            cmd_hub()
+        elif cmd == "duple":
+            cmd_duple(args)
         else:
             print(yellow("[INFO]") + f" comando desconhecido: {cmd}. Use 'help'.")
 
