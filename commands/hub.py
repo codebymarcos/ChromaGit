@@ -69,7 +69,7 @@ class Hub:
             return
         
         print(green_bold(f"\n{repo_name}"))
-        print(f"📁 {repo_path}")
+        print(f"Caminho: {repo_path}")
         
         # Contar arquivos
         total_files = 0
@@ -80,7 +80,7 @@ class Hub:
                 total_dirs += len(dirs)
                 total_files += len(files)
             
-            print(f"📄 {total_files} arquivos, 📂 {total_dirs} pastas")
+            print(f"Total: {total_files} arquivos, {total_dirs} pastas")
             
             # Listar arquivos na raiz
             root_files = []
@@ -94,9 +94,14 @@ class Hub:
                     root_dirs.append(item)
             
             if root_files:
-                print(f"Arquivos: {', '.join(root_files)}")
+                print(f"\nArquivos na raiz:")
+                for file in sorted(root_files):
+                    print(f"  {file}")
+            
             if root_dirs:
-                print(f"Pastas: {', '.join(root_dirs)}")
+                print(f"\nPastas na raiz:")
+                for folder in sorted(root_dirs):
+                    print(f"  {folder}")
                 
         except PermissionError:
             print(red_bold("Sem permissão para acessar os arquivos"))
