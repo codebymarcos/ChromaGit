@@ -1,0 +1,16 @@
+{
+    "api_key": "lXInEtdWZndCJb2a44x3CNo0c8twHlW5GFD5wnQZ",
+    "user_name": "User",
+    "model": "command-r-plus",
+    "max_tokens": 4000,
+    "temperature": 0.7,
+    "deep_think_enabled": false,
+    "deep_think_iterations": 3,
+    "cache_enabled": true,
+    "cache_ttl": 3600,
+    "auto_test": true,
+    "auto_fix_attempts": 3,
+    "diff_approval": true,
+    "theme": "monokai",
+    "test_key": "test_value"
+}

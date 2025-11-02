@@ -1,0 +1,1 @@
+# ChromaGit Copilot - Assistente de IA para ChromaGit
