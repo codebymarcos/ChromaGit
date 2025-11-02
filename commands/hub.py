@@ -6,6 +6,7 @@ __path__ = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(__path__)
 from cli.collor import red_bold, green_bold, yellow
 from utils.config import find_documents_folder
+from .noctis_map import scan_map, view_map, ide_map
 
 class Hub:
     def __init__(self):
@@ -106,6 +107,59 @@ class Hub:
         except PermissionError:
             print(red_bold("Sem permissão para acessar os arquivos"))
 
+    def view_repository(self, repo_name):
+        """Visualiza a estrutura do repositório usando noctis_map"""
+        repo_path = os.path.join(self.chroma_folder, repo_name)
+        if not os.path.exists(repo_path):
+            print(red_bold(f"Repositório '{repo_name}' não encontrado"))
+            return
+        print(green_bold(f"Visualizando estrutura de {repo_name}"))
+        view_map(repo_path)
+
+    def scan_repository(self, repo_name):
+        """Escaneia o conteúdo do repositório usando noctis_map"""
+        repo_path = os.path.join(self.chroma_folder, repo_name)
+        if not os.path.exists(repo_path):
+            print(red_bold(f"Repositório '{repo_name}' não encontrado"))
+            return
+        print(green_bold(f"Escaneando conteúdo de {repo_name}"))
+        scan_map(repo_path)
+
+    def edit_file_in_repository(self, repo_name):
+        """Permite editar um arquivo no repositório usando noctis_map IDE"""
+        repo_path = os.path.join(self.chroma_folder, repo_name)
+        if not os.path.exists(repo_path):
+            print(red_bold(f"Repositório '{repo_name}' não encontrado"))
+            return
+        
+        # Listar arquivos na raiz para escolher
+        try:
+            files = [f for f in os.listdir(repo_path) if os.path.isfile(os.path.join(repo_path, f))]
+            if not files:
+                print(yellow("Nenhum arquivo encontrado na raiz"))
+                return
+            
+            print("Arquivos disponíveis:")
+            for i, file in enumerate(files, 1):
+                print(f"{i}. {file}")
+            
+            choice = input("Selecione um arquivo (número) ou 'cancelar': ").strip()
+            if choice.lower() in ['cancelar', 'c']:
+                return
+            
+            try:
+                index = int(choice) - 1
+                if 0 <= index < len(files):
+                    file_path = os.path.join(repo_path, files[index])
+                    print(green_bold(f"Editando {files[index]}"))
+                    ide_map(file_path)
+                else:
+                    print(red_bold("Número inválido"))
+            except ValueError:
+                print(red_bold("Digite um número válido"))
+        except PermissionError:
+            print(red_bold("Sem permissão para acessar os arquivos"))
+
     def run(self):
         """Executa o hub interativo"""
         print(green_bold("ChromaGit Hub"))
@@ -122,10 +176,29 @@ class Hub:
             if selected_repo:
                 self.show_repository_info(selected_repo)
                 
-                # Perguntar se quer ver outro
-                again = input("\nVer outro? (s/n): ").strip().lower()
-                if again not in ['s', 'sim', 'y', 'yes']:
-                    break
+                # Menu de ações
+                while True:
+                    print("\nAções disponíveis:")
+                    print("1. Visualizar estrutura (árvore)")
+                    print("2. Escanear conteúdo (gerar .md)")
+                    print("3. Editar arquivo")
+                    print("4. Ver outro repositório")
+                    print("5. Sair")
+                    
+                    choice = input("Escolha uma ação (1-5): ").strip()
+                    
+                    if choice == '1':
+                        self.view_repository(selected_repo)
+                    elif choice == '2':
+                        self.scan_repository(selected_repo)
+                    elif choice == '3':
+                        self.edit_file_in_repository(selected_repo)
+                    elif choice == '4':
+                        break
+                    elif choice == '5':
+                        return
+                    else:
+                        print(red_bold("Opção inválida"))
             else:
                 break
 
