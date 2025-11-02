@@ -124,9 +124,10 @@ class CodeAnalyzer:
     def _check_magic_numbers(self, tree, code):
         magic = []
         for node in ast.walk(tree):
-            if isinstance(node, ast.Num):
-                if node.n not in [0, 1, -1, 2] and hasattr(node, 'lineno'):
-                    magic.append({'value': node.n, 'line': node.lineno})
+            # Python 3.14+ usa ast.Constant ao invés de ast.Num
+            if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+                if node.value not in [0, 1, -1, 2] and hasattr(node, 'lineno'):
+                    magic.append({'value': node.value, 'line': node.lineno})
         return magic[:10]  # limitar
     
     def _check_naming(self, tree):

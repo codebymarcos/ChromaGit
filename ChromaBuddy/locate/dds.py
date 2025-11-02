@@ -1,10 +1,51 @@
-
 import os
 import json
 import ast
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models.cohe import generate
+
+def generate_project_description(path, api_key):
+    """
+    Gera descrição geral do projeto.
+    
+    Args:
+        path: Caminho do diretório do projeto
+        api_key: Chave da API Cohere
+    
+    Returns:
+        str: Descrição do projeto
+    """
+    # Ler README se existir
+    readme_path = os.path.join(path, 'README.md')
+    if os.path.exists(readme_path):
+        try:
+            with open(readme_path, 'r', encoding='utf-8') as f:
+                readme_content = f.read(1000)  # Primeiros 1000 caracteres
+                
+            system_prompt = "Você é um assistente que analisa projetos de software."
+            user_prompt = f"Baseado neste README, descreva brevemente (2-3 frases) o propósito do projeto:\n\n{readme_content}"
+            
+            return generate(api_key, system_prompt, user_prompt)
+        except:
+            pass
+    
+    # Se não houver README, analisar estrutura de pastas
+    dirs = []
+    files = []
+    for item in os.listdir(path):
+        if os.path.isdir(os.path.join(path, item)) and not item.startswith('.'):
+            dirs.append(item)
+        elif os.path.isfile(os.path.join(path, item)) and not item.startswith('.'):
+            files.append(item)
+    
+    system_prompt = "Você é um assistente que analisa projetos de software."
+    user_prompt = f"Baseado nesta estrutura de projeto, descreva brevemente (2-3 frases) seu provável propósito:\n\nPastas: {', '.join(dirs[:10])}\nArquivos: {', '.join(files[:10])}"
+    
+    try:
+        return generate(api_key, system_prompt, user_prompt)
+    except:
+        return "Projeto de software"
 
 def cltdds(path, api_key):
     """

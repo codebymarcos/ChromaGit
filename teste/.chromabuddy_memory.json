@@ -1,0 +1,50 @@
+{
+  "interactions": [
+    {
+      "timestamp": "2025-11-02T14:13:04.205408",
+      "input": "crie uma calculadore no @teste.py",
+      "files": [],
+      "success": true
+    },
+    {
+      "timestamp": "2025-11-02T14:18:53.058062",
+      "input": "qual e o arquivo que temos no workspace \u0017",
+      "files": [],
+      "success": true
+    },
+    {
+      "timestamp": "2025-11-02T14:25:00.937934",
+      "input": "crie uma calculadora no @teste.py",
+      "files": [],
+      "success": true
+    },
+    {
+      "timestamp": "2025-11-02T14:26:05.408558",
+      "input": "crie uma calculadora no @teste.py",
+      "files": [],
+      "success": true
+    },
+    {
+      "timestamp": "2025-11-02T14:27:00.142518",
+      "input": "crie uma calculadora no @teste.py",
+      "files": [],
+      "success": true
+    },
+    {
+      "timestamp": "2025-11-02T14:30:08.188487",
+      "input": "crie prints coloridos no @teste.py",
+      "files": [],
+      "success": true
+    },
+    {
+      "timestamp": "2025-11-02T14:31:51.966672",
+      "input": "crie prints coloridos no @teste.py",
+      "files": [],
+      "success": true
+    }
+  ],
+  "patterns": {},
+  "preferences": {},
+  "frequent_files": {},
+  "common_tasks": []
+}

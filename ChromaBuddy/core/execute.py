@@ -88,25 +88,22 @@ def execute(tokenizer_result, api_key, project_root):
             # gerar diff
             diff_result = diff_mgr.compare(current_code, modified_code, target_file)
             
-            # aprovar interativamente
-            approved = diff_mgr.interactive_approve(diff_result)
+            # A aprovação já foi feita antes de chamar execute()
+            # então apenas aplicar as mudanças
             
-            if approved:
-                # salvar arquivo modificado
-                with open(file_path, 'w', encoding='utf-8') as f:
-                    f.write(modified_code)
-                
-                # calcular resumo de mudanças
-                summary = f"{diff_result['stats']['new_lines']} linhas ({diff_result['stats']['delta']:+d})"
-                
-                changes.append({
-                    'file': target_file,
-                    'status': 'modificado',
-                    'details': summary,
-                    'diff': diff_result
-                })
-            else:
-                changes.append({'file': target_file, 'status': 'rejeitado'})
+            # salvar arquivo modificado
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(modified_code)
+            
+            # calcular resumo de mudanças
+            summary = f"{diff_result['stats']['new_lines']} linhas ({diff_result['stats']['delta']:+d})"
+            
+            changes.append({
+                'file': target_file,
+                'status': 'modificado',
+                'details': summary,
+                'diff': diff_result
+            })
         else:
             changes.append({'file': target_file, 'status': 'sem mudanças'})
     

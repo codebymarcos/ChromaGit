@@ -50,6 +50,26 @@ class MemorySystem:
         
         self._save()
     
+    def add_interaction(self, user_input, ai_response=None, files_modified=None):
+        """
+        Alias para record_interaction com parâmetros adicionais
+        
+        Aceita tanto o formato novo (user_input, ai_response, files_modified)
+        quanto o formato antigo (dict com request/result/changes)
+        """
+        # Se user_input é um dicionário, extrair informações dele
+        if isinstance(user_input, dict):
+            interaction_data = user_input
+            user_input_str = interaction_data.get('request', '')
+            files_modified = interaction_data.get('changes', {}).get('files_modified', [])
+        else:
+            user_input_str = user_input
+        
+        if files_modified is None:
+            files_modified = []
+        
+        self.record_interaction(user_input_str, files_modified, success=True)
+    
     def learn_pattern(self, pattern_name, context):
         if pattern_name not in self.data['patterns']:
             self.data['patterns'][pattern_name] = []

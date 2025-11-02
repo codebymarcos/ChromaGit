@@ -46,11 +46,18 @@ def tokenizer(text, api_key, project_root=None):
         project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     
     json_path = os.path.join(project_root, 'estrutura_projeto.json')
-    if not os.path.exists(json_path):
-        return {"error": "estrutura_projeto.json não encontrado. Execute locate/dds.py primeiro."}
     
-    with open(json_path, 'r', encoding='utf-8') as f:
-        estrutura = json.load(f)
+    # Tentar carregar estrutura existente ou criar mínima
+    if os.path.exists(json_path):
+        with open(json_path, 'r', encoding='utf-8') as f:
+            estrutura = json.load(f)
+    else:
+        # Estrutura mínima se não existir
+        print(f"[INFO] estrutura_projeto.json não encontrado, usando modo simplificado")
+        estrutura = {
+            "path": project_root,
+            "estrutura": []
+        }
     
     # 3. analisar contexto profundo
     context_mgr = ContextManager(project_root)

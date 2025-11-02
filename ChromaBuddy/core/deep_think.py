@@ -90,7 +90,9 @@ class DeepThinkMode:
         )
         
         try:
-            response = generate(prompt, self.api_key)
+            # Corrigido: generate(api_key, system_prompt, user_prompt)
+            system_prompt = "Você é um assistente de análise de código especialista que realiza análises profundas e detalhadas."
+            response = generate(self.api_key, system_prompt, prompt)
             
             return {
                 'iteration': iteration,
@@ -229,7 +231,9 @@ Output as structured JSON with keys:
 Be precise and ready for execution."""
         
         try:
-            response = generate(synthesis_prompt, self.api_key)
+            # Corrigido: generate(api_key, system_prompt, user_prompt)
+            system_prompt = "Você é um especialista em sintetizar análises técnicas em planos de execução estruturados."
+            response = generate(self.api_key, system_prompt, synthesis_prompt)
             
             # Try to parse as JSON
             try:
